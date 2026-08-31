@@ -1,24 +1,36 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from './../src/app.module';
+import { HealthController } from './../src/health.controller';
 
-describe('AppController (e2e)', () => {
+/**
+ * Boots only the HealthController so this e2e needs no database. The full
+ * request pipeline (auth guard, validation, posts) is exercised by the
+ * curl smoke tests in the README and by the unit specs in src/.
+ */
+describe('Health (e2e)', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      controllers: [HealthController],
     }).compile();
-
     app = moduleFixture.createNestApplication();
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('GET /health -> 200 { status: "ok" }', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/health')
       .expect(200)
-      .expect('Hello World!');
+      .expect((res) => {
+        if (res.body.status !== 'ok') {
+          throw new Error(`unexpected body: ${JSON.stringify(res.body)}`);
+        }
+      });
   });
 });

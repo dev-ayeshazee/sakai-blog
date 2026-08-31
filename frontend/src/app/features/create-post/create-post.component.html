@@ -1,0 +1,103 @@
+<p-toast></p-toast>
+
+<div class="grid">
+    <div class="col-12 md:col-10 md:col-offset-1 lg:col-8 lg:col-offset-2">
+        <div class="card">
+            <h2 class="mt-0">Write a new post</h2>
+            <p class="text-color-secondary mt-0 mb-4">
+                Publishing as <strong>{{ auth.user()?.name }}</strong> — the author is taken from your session.
+            </p>
+
+            <form [formGroup]="form" (ngSubmit)="submit()" *ngIf="phase !== 'published'">
+                <div class="field">
+                    <label for="title" class="font-medium">Title</label>
+                    <input
+                        id="title"
+                        type="text"
+                        pInputText
+                        formControlName="title"
+                        class="w-full"
+                        [class.ng-invalid]="f['title'].touched && f['title'].invalid"
+                        placeholder="A clear, specific headline"
+                    />
+                    <small class="p-error block mt-1" *ngIf="f['title'].touched && f['title'].errors as e">
+                        <span *ngIf="e['required']">Title is required.</span>
+                        <span *ngIf="e['minlength']">At least 3 characters.</span>
+                        <span *ngIf="e['maxlength']">At most 200 characters.</span>
+                    </small>
+                </div>
+
+                <div class="field">
+                    <label for="body" class="font-medium">Body</label>
+                    <textarea
+                        id="body"
+                        pInputTextarea
+                        formControlName="body"
+                        rows="12"
+                        class="w-full"
+                        [autoResize]="true"
+                        [class.ng-invalid]="f['body'].touched && f['body'].invalid"
+                        placeholder="Write your post. The excerpt and tags are generated automatically."
+                    ></textarea>
+                    <small class="p-error block mt-1" *ngIf="f['body'].touched && f['body'].errors as e">
+                        <span *ngIf="e['required']">Body is required.</span>
+                        <span *ngIf="e['minlength']">At least 20 characters.</span>
+                        <span *ngIf="e['maxlength']">At most 20,000 characters.</span>
+                    </small>
+                </div>
+
+                <div class="flex gap-2 justify-content-end mt-3">
+                    <button
+                        pButton
+                        type="button"
+                        label="Cancel"
+                        class="p-button-text"
+                        routerLink="/"
+                        [disabled]="phase === 'publishing'"
+                    ></button>
+                    <button
+                        pButton
+                        type="submit"
+                        [label]="phase === 'publishing' ? 'Publishing…' : 'Publish'"
+                        icon="pi pi-send"
+                        [loading]="phase === 'publishing'"
+                        [disabled]="form.invalid"
+                    ></button>
+                </div>
+            </form>
+
+            <!-- Optimistic preview / confirmation -->
+            <div *ngIf="optimistic as draft" class="mt-4">
+                <p-divider align="left">
+                    <span class="text-color-secondary text-sm">
+                        {{ phase === 'publishing' ? 'Publishing preview' : 'Published' }}
+                    </span>
+                </p-divider>
+
+                <div class="surface-100 border-round p-4" [class.opacity-60]="phase === 'publishing'">
+                    <div class="flex align-items-center gap-2 mb-2">
+                        <p-tag
+                            *ngIf="phase === 'publishing'"
+                            value="Publishing…"
+                            severity="warning"
+                            icon="pi pi-spin pi-spinner"
+                        ></p-tag>
+                        <p-tag *ngIf="phase === 'published'" value="Live" severity="success" icon="pi pi-check"></p-tag>
+                    </div>
+                    <h3 class="mt-0 mb-2">{{ (published?.title) ?? draft.title }}</h3>
+                    <p class="text-color-secondary white-space-pre-line m-0">
+                        {{ published?.excerpt ?? draft.body.slice(0, 200) }}
+                    </p>
+                    <div class="flex flex-wrap gap-2 mt-3" *ngIf="published?.tags?.length">
+                        <p-tag *ngFor="let tag of published?.tags" [value]="tag" severity="info"></p-tag>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 justify-content-end mt-3" *ngIf="phase === 'published'">
+                    <button pButton type="button" label="Write another" class="p-button-text" (click)="writeAnother()"></button>
+                    <button pButton type="button" label="View post" icon="pi pi-arrow-right" iconPos="right" (click)="viewPost()"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

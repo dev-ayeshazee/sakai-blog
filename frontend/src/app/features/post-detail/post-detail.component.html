@@ -1,0 +1,29 @@
+<div class="grid">
+    <div class="col-12 md:col-10 md:col-offset-1 lg:col-8 lg:col-offset-2">
+        <div class="card">
+            <a routerLink="/" class="inline-flex align-items-center gap-2 mb-4 text-color-secondary no-underline">
+                <i class="pi pi-arrow-left"></i> Back to posts
+            </a>
+
+            <p-progressSpinner *ngIf="loading" styleClass="w-3rem h-3rem" strokeWidth="4"></p-progressSpinner>
+
+            <p-message *ngIf="error" severity="error" [text]="error"></p-message>
+
+            <article *ngIf="post as p">
+                <h1 class="mt-0 mb-2">{{ p.title }}</h1>
+                <div class="flex flex-wrap align-items-center gap-3 text-color-secondary mb-3">
+                    <span><i class="pi pi-user mr-1"></i>{{ p.author.name }}</span>
+                    <span><i class="pi pi-calendar mr-1"></i>{{ p.publishedAt | date: 'longDate' }}</span>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <p-tag *ngFor="let tag of p.tags" [value]="tag" severity="info"></p-tag>
+                </div>
+
+                <p-divider></p-divider>
+
+                <div class="post-body line-height-3 text-lg white-space-pre-line">{{ p.body }}</div>
+            </article>
+        </div>
+    </div>
+</div>

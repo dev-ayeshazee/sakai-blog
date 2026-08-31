@@ -1,0 +1,42 @@
+<div class="layout-topbar">
+    <a class="layout-topbar-logo" routerLink="">
+        <img src="assets/layout/images/{{layoutService.config().colorScheme === 'light' ? 'logo-dark' : 'logo-white'}}.svg" alt="logo">
+        <span>SAKAI BLOG</span>
+    </a>
+
+    <button #menubutton class="p-link layout-menu-button layout-topbar-button" (click)="layoutService.onMenuToggle()">
+        <i class="pi pi-bars"></i>
+    </button>
+
+    <button #topbarmenubutton class="p-link layout-topbar-menu-button layout-topbar-button" (click)="layoutService.showProfileSidebar()">
+        <i class="pi pi-ellipsis-v"></i>
+    </button>
+
+    <div #topbarmenu class="layout-topbar-menu" [ngClass]="{'layout-topbar-menu-mobile-active': layoutService.state.profileSidebarVisible}">
+        <button class="p-link layout-topbar-button" routerLink="/">
+            <i class="pi pi-home"></i>
+            <span>Home</span>
+        </button>
+
+        <ng-container *ngIf="auth.isAuthenticated(); else guest">
+            <button class="p-link layout-topbar-button" routerLink="/create">
+                <i class="pi pi-pencil"></i>
+                <span>New Post</span>
+            </button>
+
+            <button class="p-link layout-topbar-button" (click)="profile.toggle($event)"
+                aria-haspopup="true" aria-controls="profile_menu">
+                <p-avatar [label]="initials" shape="circle" styleClass="bg-primary text-white"></p-avatar>
+                <span>{{ auth.user()?.name }}</span>
+            </button>
+            <p-menu #profile id="profile_menu" [model]="profileMenu()" [popup]="true" appendTo="body"></p-menu>
+        </ng-container>
+
+        <ng-template #guest>
+            <button class="p-link layout-topbar-button" routerLink="/auth/login">
+                <i class="pi pi-sign-in"></i>
+                <span>Login</span>
+            </button>
+        </ng-template>
+    </div>
+</div>

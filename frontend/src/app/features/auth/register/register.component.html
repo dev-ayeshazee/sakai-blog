@@ -1,0 +1,48 @@
+<p-toast></p-toast>
+
+<div class="surface-ground flex align-items-center justify-content-center min-h-screen min-w-screen overflow-hidden">
+    <div class="flex flex-column align-items-center justify-content-center">
+        <div class="text-900 text-5xl font-medium mb-5">
+            <i class="pi pi-book text-primary mr-2"></i>Sakai Blog
+        </div>
+        <div style="border-radius: 56px; padding: 0.3rem; background: linear-gradient(180deg, var(--primary-color) 10%, rgba(33, 150, 243, 0) 30%);">
+            <div class="w-full surface-card py-8 px-5 sm:px-8" style="border-radius: 53px">
+                <form [formGroup]="form" (ngSubmit)="submit()">
+                    <div class="text-center mb-5">
+                        <div class="text-900 text-3xl font-medium mb-3">Create your account</div>
+                        <span class="text-600 font-medium">It takes a few seconds</span>
+                    </div>
+
+                    <label for="name" class="block text-900 text-xl font-medium mb-2">Name</label>
+                    <input id="name" type="text" placeholder="Your name" pInputText formControlName="name"
+                        class="w-full md:w-30rem mb-1" style="padding: 1rem" />
+                    <small class="p-error block mb-3" *ngIf="f.name.touched && f.name.invalid">
+                        Name must be 2–80 characters.
+                    </small>
+
+                    <label for="email" class="block text-900 text-xl font-medium mb-2">Email</label>
+                    <input id="email" type="email" placeholder="Email address" pInputText formControlName="email"
+                        class="w-full md:w-30rem mb-1" style="padding: 1rem" />
+                    <small class="p-error block mb-3" *ngIf="f.email.touched && f.email.invalid">
+                        Enter a valid email address.
+                    </small>
+
+                    <label for="password" class="block text-900 font-medium text-xl mb-2">Password</label>
+                    <p-password id="password" formControlName="password" placeholder="Password" [toggleMask]="true"
+                        styleClass="w-full mb-1" inputStyleClass="w-full p-3 md:w-30rem"></p-password>
+                    <small class="p-error block mb-3" *ngIf="f.password.touched && f.password.invalid">
+                        At least 8 characters.
+                    </small>
+
+                    <button pButton pRipple type="submit" label="Create account" class="w-full p-3 text-xl mt-3"
+                        [loading]="loading"></button>
+
+                    <div class="text-center mt-4">
+                        <span class="text-600">Already have an account? </span>
+                        <a routerLink="/auth/login" class="font-medium no-underline cursor-pointer text-primary">Sign in</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

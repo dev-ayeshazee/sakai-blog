@@ -68,9 +68,11 @@ export class HomeComponent {
     rowModelType: 'infinite' as const,
     cacheBlockSize: PAGE_SIZE,
     paginationPageSize: PAGE_SIZE,
+    paginationPageSizeSelector: false as const,
     pagination: true,
     animateRows: true,
     rowHeight: 48,
+    maxBlocksInCache: 10,
   };
 
   constructor(

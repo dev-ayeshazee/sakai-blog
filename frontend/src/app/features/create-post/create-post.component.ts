@@ -6,7 +6,6 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
-import { finalize } from 'rxjs';
 import { PostService } from '../../core/services/post.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PostDetail } from '../../core/models/post.model';
@@ -55,36 +54,33 @@ export class CreatePostComponent {
     this.phase = 'publishing';
     this.form.disable();
 
-    this.posts
-      .create(payload)
-      .pipe(finalize(() => {}))
-      .subscribe({
-        next: (post) => {
-          this.published = post;
-          this.phase = 'published';
-          this.messages.add({
-            severity: 'success',
-            summary: 'Published',
-            detail: 'Your post is live.',
-          });
-        },
-        error: (err) => {
-          // --- Rollback.
-          this.phase = 'editing';
-          this.optimistic = undefined;
-          this.form.enable();
-          const detail =
-            err?.error?.message ??
-            (err?.status === 401
-              ? 'Your session expired — please log in again.'
-              : 'Could not publish the post. Please try again.');
-          this.messages.add({
-            severity: 'error',
-            summary: 'Publish failed',
-            detail: Array.isArray(detail) ? detail.join(', ') : detail,
-          });
-        },
-      });
+    this.posts.create(payload).subscribe({
+      next: (post) => {
+        this.published = post;
+        this.phase = 'published';
+        this.messages.add({
+          severity: 'success',
+          summary: 'Published',
+          detail: 'Your post is live.',
+        });
+      },
+      error: (err) => {
+        // --- Rollback.
+        this.phase = 'editing';
+        this.optimistic = undefined;
+        this.form.enable();
+        const detail =
+          err?.error?.message ??
+          (err?.status === 401
+            ? 'Your session expired — please log in again.'
+            : 'Could not publish the post. Please try again.');
+        this.messages.add({
+          severity: 'error',
+          summary: 'Publish failed',
+          detail: Array.isArray(detail) ? detail.join(', ') : detail,
+        });
+      },
+    });
   }
 
   viewPost(): void {

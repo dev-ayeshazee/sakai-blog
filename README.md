@@ -215,6 +215,17 @@ curl -s -X POST http://localhost:3001/api/mcp/rpc \
 
 ---
 
+## Tests
+
+```bash
+cd backend && npm test
+```
+
+10 unit tests covering the security-sensitive paths: password hashing +
+duplicate-email + wrong-password in `AuthService`, "author from JWT" +
+moderation-reject-with-422 in `PostsService`, and the heuristic AI provider
+(excerpt length, sentence-boundary trim, stop-word tag ranking, moderation).
+
 ## Notes & trade-offs
 
 - **Ports**: the dev machine already had Postgres on `5432` and another
@@ -223,3 +234,6 @@ curl -s -X POST http://localhost:3001/api/mcp/rpc \
 - Seeded excerpts/tags use the heuristic provider — no API key needed to demo.
 - The API image is single-stage (keeps dev deps so `npm run seed` works via
   `docker compose exec`); a production build would multi-stage prune.
+- The sakai-ng 17.0.0 starter's `lara-light-indigo` theme references an
+  `Inter-roman.var.woff2` it doesn't ship — the browser logs one 404 and falls
+  back to the system font stack. Upstream quirk, cosmetic only.

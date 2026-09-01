@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, debounceTime } from 'rxjs';
 import {
@@ -83,7 +83,9 @@ export class HomeComponent {
       const query = this.buildQuery(params);
       this.posts.list(query).subscribe({
         next: (res) => {
-          this.totalCount = res.meta.total;
+          // AG Grid may invoke getRows outside Angular's zone; re-enter so the
+          // post-count binding updates.
+          this.zone.run(() => (this.totalCount = res.meta.total));
           params.successCallback(res.data, res.meta.total);
         },
         error: () => params.failCallback(),
@@ -105,6 +107,7 @@ export class HomeComponent {
   constructor(
     private readonly posts: PostService,
     private readonly router: Router,
+    private readonly zone: NgZone,
   ) {
     this.search$.pipe(debounceTime(300)).subscribe(() => this.refresh());
   }

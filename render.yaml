@@ -1,13 +1,14 @@
-# Render Blueprint — one-click deploy of the whole stack.
+# Render Blueprint — deploy the whole stack (Postgres + NestJS API + Angular
+# static site) on Render's free tier. Full walkthrough: docs/DEPLOY.md
 #
-#   1. Push this repo to GitHub.
-#   2. https://dashboard.render.com/blueprints -> "New Blueprint Instance"
-#      -> pick this repo -> Apply.
-#   3. Render provisions: Postgres + the NestJS API (Docker) + the Angular
-#      static site, and wires the URLs between them automatically.
+#   1. https://dashboard.render.com/blueprints -> "New Blueprint Instance"
+#   2. Connect this repo -> Apply (leave the CORS_ORIGIN prompt blank).
+#   3. When both URLs exist: Dashboard -> blog-api -> Environment ->
+#      set CORS_ORIGIN to the blog-frontend URL -> Save.
 #
-# Free tier notes: the web service sleeps after 15 min idle (~50s cold start)
-# and the free Postgres instance is deleted after 90 days.
+# Free tier notes: the web service sleeps after 15 min idle (~50s cold start);
+# Render's free Postgres is removed ~30 days after creation (swap DATABASE_URL
+# for a free Neon/Supabase string to keep it alive — see docs/DEPLOY.md).
 
 databases:
   - name: blog-db
@@ -48,13 +49,11 @@ services:
         value: "true"
       - key: AI_PROVIDER
         value: heuristic
-      # Allow the static site's origin. If Render flags a dependency cycle,
-      # delete this block and paste the frontend URL in the dashboard instead.
+      # Set this to the blog-frontend URL after the first deploy (Dashboard ->
+      # blog-api -> Environment). Kept out of the blueprint so the API and the
+      # static site don't form a circular dependency at apply time.
       - key: CORS_ORIGIN
-        fromService:
-          type: web
-          name: blog-frontend
-          property: host
+        sync: false
 
   # ---- Angular static site ------------------------------------------------
   - type: web

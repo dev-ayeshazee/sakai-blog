@@ -14,15 +14,22 @@ with a **NestJS** API.
 
 ## Live demo
 
-Deploy your own in ~5 minutes with the bundled Render blueprint —
-see **[docs/DEPLOY.md](docs/DEPLOY.md)**:
-
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/dev-ayeshazee/sakai-blog)
 
-> After the blueprint applies you get
-> `https://blog-frontend-XXXX.onrender.com` (site) and
-> `https://blog-api-XXXX.onrender.com/api` (API). Demo login below.
-> _(Free tier: first request after 15 min idle cold-starts in ~50 s.)_
+Free deploy in ~8 minutes — **[full step-by-step in docs/DEPLOY.md](docs/DEPLOY.md)**.
+Short version:
+
+1. Sign in to <https://dashboard.render.com> with GitHub (no card for the free tier).
+2. **Blueprints → New Blueprint Instance →** connect this repo **→ Apply**
+   (leave the `CORS_ORIGIN` prompt blank).
+3. After ~5–8 min you get `https://blog-frontend-XXXX.onrender.com` (site) and
+   `https://blog-api-XXXX.onrender.com/api` (API).
+4. Dashboard → `blog-api` → **Environment** → set `CORS_ORIGIN` to the site URL → **Save**.
+5. Open the site, log in with the demo account below.
+
+_Free tier: services sleep after 15 min idle (~50 s cold start); Render's free
+Postgres is deleted after ~30 days — swap in a free Neon DB to keep it
+(see DEPLOY.md)._
 
 ---
 

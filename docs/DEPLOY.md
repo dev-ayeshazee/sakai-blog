@@ -17,15 +17,21 @@ stack. Other platforms are documented below.
 
 ### Steps
 
-1. Push the repo to GitHub.
-2. Go to <https://dashboard.render.com/blueprints> → **New Blueprint Instance**.
-3. Select the repo → **Apply**.
-4. Wait for all three to go green (~5–8 min on the first deploy).
-
-You get:
-
-- API  → `https://blog-api-XXXX.onrender.com/api`
-- Site → `https://blog-frontend-XXXX.onrender.com`
+1. Push the repo to GitHub (done).
+2. Create a free account at <https://dashboard.render.com> — sign in with
+   GitHub. No credit card for the free tier.
+3. <https://dashboard.render.com/blueprints> → **New Blueprint Instance**.
+4. **Connect** the `dev-ayeshazee/sakai-blog` repo → Render reads `render.yaml`
+   and lists `blog-db`, `blog-api`, `blog-frontend`.
+5. It prompts for one value — **`CORS_ORIGIN`** on `blog-api`. Leave it blank
+   for now (or type `*`), click **Apply**.
+6. Wait ~5–8 min for the first build. You now have:
+   - API  → `https://blog-api-XXXX.onrender.com/api`
+   - Site → `https://blog-frontend-XXXX.onrender.com`
+7. **Lock down CORS:** Dashboard → `blog-api` → **Environment** → set
+   `CORS_ORIGIN` = your `https://blog-frontend-XXXX.onrender.com` → **Save**
+   (auto-redeploys, ~1 min).
+8. Open the site URL. Log in with `demo@blog.test` / `password123`.
 
 ### How the wiring works
 
@@ -35,23 +41,33 @@ You get:
 - `blog-frontend`'s build runs `node scripts/set-env.js`, which reads the
   `API_HOST` service binding and writes `environment.prod.ts` with
   `apiUrl = https://<api-host>/api` before `ng build`.
-- `blog-api`'s `CORS_ORIGIN` is bound to the frontend's host; `main.ts`
-  prepends `https://` to bare hosts.
-
-### If Render reports a dependency cycle
-
-The API↔frontend host bindings are mutual. If Render refuses to apply:
-
-1. Delete the `CORS_ORIGIN` env block from `render.yaml`, re-apply.
-2. Once `blog-frontend` has a URL, add `CORS_ORIGIN` =
-   `https://blog-frontend-XXXX.onrender.com` in the `blog-api` dashboard
-   → **Environment** → save (triggers a redeploy).
+- `CORS_ORIGIN` is the one value you set by hand (step 7) — kept out of the
+  blueprint so the two services don't form a circular dependency. `main.ts`
+  also prepends `https://` to a bare host if you paste one.
 
 ### Free-tier caveats
 
-- The web service sleeps after 15 min idle; first request after that takes
-  ~50 s (cold start).
-- The free Postgres instance is removed after 90 days.
+- The web service **sleeps after 15 min idle**; the next request cold-starts in
+  ~50 s. Fine for a demo — mention it to reviewers.
+- Render's **free Postgres is deleted ~30 days** after creation. For something
+  longer-lived, use a free Neon database instead (next section).
+
+### Keep it alive: free Neon Postgres instead of Render's
+
+Neon's free tier does not expire. Swap the database only:
+
+1. <https://neon.tech> → sign up (GitHub) → **New Project** (pick a region near
+   your Render region, e.g. US West).
+2. Copy the **connection string** (`postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require`).
+3. In `render.yaml`, delete the whole `databases:` block **and** the
+   `DATABASE_URL` `fromDatabase` entry under `blog-api`. Commit + push.
+4. Render dashboard → `blog-api` → **Environment**:
+   - `DATABASE_URL` = the Neon string
+   - `DATABASE_SSL` = `true`
+   - Save → redeploy. Migrations + seed run against Neon on boot.
+
+(Same recipe works with a free **Supabase** database — use its
+*Session pooler* connection string.)
 
 ---
 

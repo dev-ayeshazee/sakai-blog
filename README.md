@@ -17,7 +17,7 @@ with a **NestJS** API.
 Deploy your own in ~5 minutes with the bundled Render blueprint —
 see **[docs/DEPLOY.md](docs/DEPLOY.md)**:
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/dev-ayeshazee/sakai-blog)
 
 > After the blueprint applies you get
 > `https://blog-frontend-XXXX.onrender.com` (site) and

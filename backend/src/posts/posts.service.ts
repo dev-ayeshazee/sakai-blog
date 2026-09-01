@@ -44,12 +44,38 @@ export class PostsService {
   ) {}
 
   async findPaginated(query: QueryPostsDto): Promise<PaginatedPosts> {
-    const { page, pageSize } = query;
-    const [rows, total] = await this.posts.findAndCount({
-      order: { publishedAt: 'DESC' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    });
+    const { page, pageSize, search, author, tag, sort, order } = query;
+
+    const qb = this.posts
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.author', 'author');
+
+    if (search) {
+      qb.andWhere(
+        '(post.title ILIKE :s OR post.body ILIKE :s OR author.name ILIKE :s)',
+        { s: `%${search}%` },
+      );
+    }
+    if (author) {
+      qb.andWhere('author.name ILIKE :a', { a: `%${author}%` });
+    }
+    if (tag) {
+      qb.andWhere(':tag = ANY(post.tags)', { tag });
+    }
+
+    const sortColumn = {
+      publishedAt: 'post.publishedAt',
+      title: 'post.title',
+      author: 'author.name',
+    }[sort];
+    qb.orderBy(sortColumn, order)
+      // stable tiebreaker so pagination never drops/repeats rows
+      .addOrderBy('post.id', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize);
+
+    const [rows, total] = await qb.getManyAndCount();
+
     return {
       data: rows.map((p) => this.toListItem(p)),
       meta: {

@@ -31,3 +31,15 @@ export interface CreatePostPayload {
   title: string;
   body: string;
 }
+
+export type PostSortField = 'publishedAt' | 'title' | 'author';
+
+export interface PostListQuery {
+  page: number;
+  pageSize?: number;
+  search?: string;
+  author?: string;
+  tag?: string;
+  sort?: PostSortField;
+  order?: 'ASC' | 'DESC';
+}

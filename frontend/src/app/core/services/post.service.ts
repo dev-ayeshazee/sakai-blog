@@ -6,6 +6,7 @@ import {
   CreatePostPayload,
   PaginatedPosts,
   PostDetail,
+  PostListQuery,
 } from '../models/post.model';
 
 @Injectable({ providedIn: 'root' })
@@ -14,10 +15,17 @@ export class PostService {
 
   constructor(private readonly http: HttpClient) {}
 
-  list(page: number, pageSize = 5): Observable<PaginatedPosts> {
-    const params = new HttpParams()
-      .set('page', page)
-      .set('pageSize', pageSize);
+  list(query: PostListQuery): Observable<PaginatedPosts> {
+    let params = new HttpParams()
+      .set('page', query.page)
+      .set('pageSize', query.pageSize ?? 5);
+
+    if (query.search) params = params.set('search', query.search);
+    if (query.author) params = params.set('author', query.author);
+    if (query.tag) params = params.set('tag', query.tag);
+    if (query.sort) params = params.set('sort', query.sort);
+    if (query.order) params = params.set('order', query.order);
+
     return this.http.get<PaginatedPosts>(this.api, { params });
   }
 

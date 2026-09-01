@@ -71,3 +71,66 @@ describe('PostsService.create', () => {
     expect(repo.save).not.toHaveBeenCalled();
   });
 });
+
+describe('PostsService.findPaginated', () => {
+  let service: PostsService;
+  let qb: any;
+
+  beforeEach(async () => {
+    qb = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+    };
+    const repo = { createQueryBuilder: jest.fn(() => qb) };
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        PostsService,
+        { provide: getRepositoryToken(Post), useValue: repo },
+        { provide: AiService, useValue: { enrichPost: jest.fn() } },
+      ],
+    }).compile();
+    service = moduleRef.get(PostsService);
+  });
+
+  it('applies search, author and tag filters and the requested sort', async () => {
+    const res = await service.findPaginated({
+      page: 2,
+      pageSize: 5,
+      search: 'angular',
+      author: 'Jane',
+      tag: 'nestjs',
+      sort: 'title',
+      order: 'ASC',
+    });
+
+    const wheres = qb.andWhere.mock.calls.map((c: any[]) => c[0]).join(' | ');
+    expect(wheres).toContain('ILIKE :s');
+    expect(wheres).toContain('author.name ILIKE :a');
+    expect(wheres).toContain(':tag = ANY(post.tags)');
+    expect(qb.orderBy).toHaveBeenCalledWith('post.title', 'ASC');
+    expect(qb.skip).toHaveBeenCalledWith(5); // (page 2 - 1) * pageSize
+    expect(qb.take).toHaveBeenCalledWith(5);
+    expect(res.meta).toEqual({
+      page: 2,
+      pageSize: 5,
+      total: 0,
+      totalPages: 1,
+    });
+  });
+
+  it('defaults to publishedAt DESC with no filters', async () => {
+    await service.findPaginated({
+      page: 1,
+      pageSize: 5,
+      sort: 'publishedAt',
+      order: 'DESC',
+    });
+    expect(qb.andWhere).not.toHaveBeenCalled();
+    expect(qb.orderBy).toHaveBeenCalledWith('post.publishedAt', 'DESC');
+  });
+});

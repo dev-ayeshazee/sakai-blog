@@ -64,6 +64,9 @@ services:
     staticPublishPath: dist/sakai-ng
     autoDeploy: true
     envVars:
+      # Angular 17 / sakai-ng 17 does not build on Render's default Node 22.
+      - key: NODE_VERSION
+        value: "20.19.4"
       - key: API_HOST
         fromService:
           type: web

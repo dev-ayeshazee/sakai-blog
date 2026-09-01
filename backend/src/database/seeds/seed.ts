@@ -1,17 +1,15 @@
 import 'reflect-metadata';
-import { In } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import dataSource from '../../config/typeorm.config';
 import { User } from '../../users/entities/user.entity';
 import { Post } from '../../posts/entities/post.entity';
 
-/** Idempotent-ish seed: wipes posts + demo users, then reinserts. */
 const DEMO_USERS = [
   { email: 'demo@blog.test', name: 'Demo Author', password: 'password123' },
   { email: 'jane@blog.test', name: 'Jane Rivera', password: 'password123' },
 ];
 
-const TOPICS = [
+const TOPICS: [string, string][] = [
   ['Getting started with Angular 17 standalone components',
     'Angular 17 makes standalone components the default. This post walks through bootstrapping an app without NgModules, wiring the router, and lazy-loading feature areas. We cover the mental model shift, the new control-flow syntax, and how signals fit in. By the end you will have a project structure that scales.'],
   ['Designing a REST API with NestJS and TypeORM',
@@ -38,24 +36,43 @@ const TOPICS = [
     'Reviewers skim. A predictable folder layout, core and shared modules, typed models next to services, and a single environment file with the API base URL all buy goodwill. This post is a checklist for repo hygiene: README first, .env.example committed, no node_modules, meaningful commits.'],
 ];
 
-async function run() {
-  await dataSource.initialize();
-  const userRepo = dataSource.getRepository(User);
-  const postRepo = dataSource.getRepository(Post);
+export interface SeedResult {
+  seeded: boolean;
+  message: string;
+}
+
+/**
+ * Populate the database with a demo author + sample posts.
+ *
+ * @param ds            an initialised DataSource
+ * @param onlyIfEmpty   skip when the users table already has rows (used on
+ *                      deploy so restarts never wipe real data)
+ */
+export async function seed(
+  ds: DataSource,
+  { onlyIfEmpty = false }: { onlyIfEmpty?: boolean } = {},
+): Promise<SeedResult> {
+  const userRepo = ds.getRepository(User);
+  const postRepo = ds.getRepository(Post);
+
+  if (onlyIfEmpty && (await userRepo.count()) > 0) {
+    return { seeded: false, message: 'Database already has users — skipping seed.' };
+  }
 
   await postRepo.query('TRUNCATE TABLE "posts" CASCADE');
   await userRepo.delete({ email: In(DEMO_USERS.map((u) => u.email)) });
 
   const users: User[] = [];
   for (const u of DEMO_USERS) {
-    const user = await userRepo.save(
-      userRepo.create({
-        email: u.email,
-        name: u.name,
-        passwordHash: await bcrypt.hash(u.password, 10),
-      }),
+    users.push(
+      await userRepo.save(
+        userRepo.create({
+          email: u.email,
+          name: u.name,
+          passwordHash: await bcrypt.hash(u.password, 10),
+        }),
+      ),
     );
-    users.push(user);
   }
 
   let i = 0;
@@ -79,15 +96,27 @@ async function run() {
     i++;
   }
 
-  await dataSource.destroy();
-
-  console.log(
-    `Seeded ${users.length} users and ${TOPICS.length} posts.\n` +
+  return {
+    seeded: true,
+    message:
+      `Seeded ${users.length} users and ${TOPICS.length} posts. ` +
       `Login with: ${DEMO_USERS[0].email} / ${DEMO_USERS[0].password}`,
-  );
+  };
 }
 
-run().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+/** CLI entrypoint: `npm run seed`. */
+if (require.main === module) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const dataSource: DataSource = require('../../config/typeorm.config').default;
+  dataSource
+    .initialize()
+    .then((ds) => seed(ds))
+    .then((res) => {
+      console.log(res.message);
+      return dataSource.destroy();
+    })
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}

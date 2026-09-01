@@ -1,0 +1,80 @@
+# Render Blueprint — one-click deploy of the whole stack.
+#
+#   1. Push this repo to GitHub.
+#   2. https://dashboard.render.com/blueprints -> "New Blueprint Instance"
+#      -> pick this repo -> Apply.
+#   3. Render provisions: Postgres + the NestJS API (Docker) + the Angular
+#      static site, and wires the URLs between them automatically.
+#
+# Free tier notes: the web service sleeps after 15 min idle (~50s cold start)
+# and the free Postgres instance is deleted after 90 days.
+
+databases:
+  - name: blog-db
+    plan: free
+    databaseName: blog
+    user: blog
+    region: oregon
+
+services:
+  # ---- NestJS API (Docker) --------------------------------------------------
+  - type: web
+    name: blog-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: blog-db
+          property: connectionString
+      - key: DATABASE_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: RUN_MIGRATIONS
+        value: "true"
+      - key: RUN_SEED
+        value: "true"
+      - key: AI_PROVIDER
+        value: heuristic
+      # Allow the static site's origin. If Render flags a dependency cycle,
+      # delete this block and paste the frontend URL in the dashboard instead.
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: blog-frontend
+          property: host
+
+  # ---- Angular static site ------------------------------------------------
+  - type: web
+    name: blog-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && node scripts/set-env.js && npm run build
+    staticPublishPath: dist/sakai-ng
+    autoDeploy: true
+    envVars:
+      - key: API_HOST
+        fromService:
+          type: web
+          name: blog-api
+          property: host
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN

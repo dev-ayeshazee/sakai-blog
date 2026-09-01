@@ -8,7 +8,21 @@ with a **NestJS** API.
 | ----------- | --------------------------------------------------------------- |
 | `frontend/` | Angular 17, sakai-ng (PrimeNG 17), AG Grid 31, RxJS + signals  |
 | `backend/`  | NestJS 10, TypeORM 0.3, PostgreSQL 16, Passport-JWT, bcrypt    |
-| infra       | `docker-compose.yml` — Postgres + API                          |
+| infra       | `docker-compose.yml` (Postgres + API) · `render.yaml` blueprint |
+
+---
+
+## Live demo
+
+Deploy your own in ~5 minutes with the bundled Render blueprint —
+see **[docs/DEPLOY.md](docs/DEPLOY.md)**:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+> After the blueprint applies you get
+> `https://blog-frontend-XXXX.onrender.com` (site) and
+> `https://blog-api-XXXX.onrender.com/api` (API). Demo login below.
+> _(Free tier: first request after 15 min idle cold-starts in ~50 s.)_
 
 ---
 
@@ -93,11 +107,27 @@ Base URL `http://localhost:3001/api`. All bodies are JSON.
 | `POST /auth/register`| —    | `{ email, name, password }`   | Returns `{ accessToken, user }`         |
 | `POST /auth/login`   | —    | `{ email, password }`         | Returns `{ accessToken, user }`         |
 | `GET  /auth/me`      | JWT  | —                             | Current user (used by the navbar)       |
-| `GET  /posts?page=1&pageSize=5` | — | —                  | `{ data: [...], meta: {...} }`          |
+| `GET  /posts`        | —    | —                             | Paginated list — query params below     |
 | `GET  /posts/:id`    | —    | —                             | Full post incl. `body`                  |
 | `POST /posts`        | JWT  | `{ title, body }`             | Author from JWT; excerpt + tags auto    |
 | `GET  /mcp/tools`    | —    | —                             | Mock MCP tool catalogue                 |
 | `POST /mcp/rpc`      | —    | JSON-RPC 2.0                  | `initialize` / `tools/list` / `tools/call` |
+
+### `GET /posts` query parameters
+
+| Param      | Type / values                        | Default       | Effect                                        |
+| ---------- | ------------------------------------ | ------------- | -------------------------------------------- |
+| `page`     | int ≥ 1                              | `1`           | Page number                                  |
+| `pageSize` | int 1–50                            | `5`           | Rows per page                                |
+| `search`   | string                              | —             | `ILIKE` across title, body **and** author name |
+| `author`   | string                              | —             | `ILIKE` on author name (AG Grid column filter) |
+| `tag`      | string                              | —             | Posts containing this exact tag              |
+| `sort`     | `publishedAt` \| `title` \| `author` | `publishedAt` | Sort field (anything else → `400`)          |
+| `order`    | `ASC` \| `DESC`                      | `DESC`        | Sort direction                               |
+
+```bash
+curl "http://localhost:3001/api/posts?search=angular&sort=title&order=ASC&page=1"
+```
 
 Validation is enforced by `class-validator` DTOs + a global `ValidationPipe`
 (`whitelist`, `forbidNonWhitelisted`). Invalid input → `400` with a message
@@ -151,7 +181,10 @@ src/app/
 - **Home** uses AG Grid's **infinite row model** — each 5-row block is a
   `GET /posts?page=n&pageSize=5` call, so pagination is genuinely server-driven.
   Columns: Title, Excerpt (≤200 chars), Author, Published date. Row click →
-  detail.
+  detail. **Sorting** (Title / Author / Published column headers), the
+  **Author column filter**, and the debounced **global search box** all feed
+  the same datasource — every sort/filter/search round-trips to the API, and a
+  change purges the cache and returns to page 1.
 - **Create post** renders an optimistic preview the instant you hit Publish and
   rolls it back (with a toast) if the request fails.
 - **Navbar** (`layout/app.topbar.component`) shows an avatar + name + dropdown
@@ -195,6 +228,8 @@ curl -s -X POST http://localhost:3001/api/mcp/rpc \
   validators with inline messages (UI).
 - ✅ **Docker setup** — `docker-compose.yml` for API + Postgres, `backend/Dockerfile`.
 - ✅ **Content moderation** as write-path middleware (`422` on flagged content).
+- ✅ **One-command cloud deploy** — `render.yaml` blueprint (API + DB + static
+  site, URLs auto-wired). See [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ---
 
@@ -212,6 +247,7 @@ curl -s -X POST http://localhost:3001/api/mcp/rpc \
 | `ANTHROPIC_API_KEY` | —                                         | Enables the Anthropic excerpt path       |
 | `MCP_SERVER_URL`    | —                                         | Point AI middleware at a real MCP server |
 | `RUN_MIGRATIONS`    | `false`                                   | Run pending migrations on boot           |
+| `RUN_SEED`          | `false`                                   | Seed demo data on boot **if the DB is empty** |
 
 ---
 
@@ -221,10 +257,11 @@ curl -s -X POST http://localhost:3001/api/mcp/rpc \
 cd backend && npm test
 ```
 
-10 unit tests covering the security-sensitive paths: password hashing +
-duplicate-email + wrong-password in `AuthService`, "author from JWT" +
-moderation-reject-with-422 in `PostsService`, and the heuristic AI provider
-(excerpt length, sentence-boundary trim, stop-word tag ranking, moderation).
+12 unit tests covering the security-sensitive paths: password hashing +
+duplicate-email + wrong-password in `AuthService`; "author from JWT" +
+moderation-reject-with-422 + search/author/tag/sort query building in
+`PostsService`; and the heuristic AI provider (excerpt length,
+sentence-boundary trim, stop-word tag ranking, moderation).
 
 ## Notes & trade-offs
 

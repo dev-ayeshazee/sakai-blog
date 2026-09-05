@@ -12,6 +12,16 @@ with a **NestJS** API.
 
 ---
 
+## Screenshots
+
+| Home — AG Grid, server-side pagination / sort / search / filter | Post detail (public) |
+| :---: | :---: |
+| ![Home](docs/screenshots/home.png) | ![Post detail](docs/screenshots/post-detail.png) |
+| **Create post** — auth-only, optimistic publish | **Login** — sakai template + JWT |
+| ![Create post](docs/screenshots/create-post.png) | ![Login](docs/screenshots/login.png) |
+
+---
+
 ## Live demo
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/dev-ayeshazee/sakai-blog)
@@ -41,7 +51,7 @@ Postgres is deleted after ~30 days — swap in a free Neon DB to keep it
 docker compose up --build
 # API  -> http://localhost:3001/api   (migrations run on boot)
 # DB   -> localhost:5544
-docker compose exec api npm run seed   # optional: demo user + 12 posts
+docker compose exec api npm run seed   # optional: 4 demo authors + 42 posts
 ```
 
 Then run the frontend (it is not containerised):

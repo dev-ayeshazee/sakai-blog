@@ -202,14 +202,13 @@ src/app/
 
 ## AI / MCP integration
 
-
 - **AI middleware** (`backend/src/ai`): `AiService.enrichPost()` runs on the
   write path for every new post — content moderation, excerpt generation, tag
   suggestion — before the row is persisted.
 - **Provider abstraction**: `AiProvider` interface with a zero-dependency
-  `HeuristicAiProvider` (default, offline) and an `AnthropicAiProvider`
-  (`AI_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`) that falls back to the
-  heuristic on any error.
+  `HeuristicAiProvider` (default, fully offline) and an optional HTTP LLM
+  provider (`AI_PROVIDER=anthropic` + `ANTHROPIC_API_KEY` + `AI_MODEL`) that
+  falls back to the heuristic on any error.
 - **Mock MCP server** (`backend/src/mcp`): a self-contained MCP server speaking
   JSON-RPC 2.0 (`initialize`, `tools/list`, `tools/call`) with three tools —
   `generate_excerpt`, `suggest_tags`, `moderate_content`.

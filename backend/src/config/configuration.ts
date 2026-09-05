@@ -48,6 +48,7 @@ export default (): AppConfig => ({
       (process.env.AI_PROVIDER as 'heuristic' | 'anthropic') ??
       (process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'heuristic'),
     anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+    // Required when AI_PROVIDER is not "heuristic"; empty otherwise.
     model: process.env.AI_MODEL ?? '',
   },
   mcp: {

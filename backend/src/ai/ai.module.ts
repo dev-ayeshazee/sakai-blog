@@ -19,11 +19,9 @@ import { AnthropicAiProvider } from './providers/anthropic.provider';
       ): AiProvider => {
         const provider = config.get<string>('ai.provider');
         const apiKey = config.get<string>('ai.anthropicApiKey');
-        if (provider === 'anthropic' && apiKey) {
-          return new AnthropicAiProvider({
-            apiKey,
-            model: config.get<string>('ai.model') ?? '',
-          });
+        const model = config.get<string>('ai.model');
+        if (provider === 'anthropic' && apiKey && model) {
+          return new AnthropicAiProvider({ apiKey, model });
         }
         return heuristic;
       },

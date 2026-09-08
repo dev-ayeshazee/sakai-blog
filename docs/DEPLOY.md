@@ -5,69 +5,66 @@ stack. Other platforms are documented below.
 
 ---
 
-## Render (recommended — one blueprint, free tier)
+## Render + Neon (recommended — free, nothing expires)
 
-`render.yaml` defines three resources and wires the URLs between them:
+`render.yaml` creates two services; the database is a free external Neon
+instance so it never gets deleted.
 
-| Resource        | What it is                                    |
-| --------------- | --------------------------------------------- |
-| `blog-db`       | Managed PostgreSQL (free)                     |
-| `blog-api`      | NestJS API from `backend/Dockerfile` (Docker web service) |
-| `blog-frontend` | Angular static site built from `frontend/`    |
+| Resource        | Where            | Notes                                        |
+| --------------- | ---------------- | -------------------------------------------- |
+| Postgres        | Neon (free)      | permanent; autosuspends, wakes on connect    |
+| `blog-api`      | Render web (free)| Docker from `backend/Dockerfile`; sleeps 15 min idle, ~40 s wake |
+| `blog-frontend` | Render static (free) | always on                                |
 
 ### Steps
 
-1. Push the repo to GitHub (done).
-2. Create a free account at <https://dashboard.render.com> — sign in with
-   GitHub. No credit card for the free tier.
-3. <https://dashboard.render.com/blueprints> → **New Blueprint Instance**.
-4. **Connect** the `dev-ayeshazee/sakai-blog` repo → Render reads `render.yaml`
-   and lists `blog-db`, `blog-api`, `blog-frontend`.
-5. It prompts for one value — **`CORS_ORIGIN`** on `blog-api`. Leave it blank
-   for now (or type `*`), click **Apply**.
-6. Wait ~5–8 min for the first build. You now have:
+**1 — Neon database**
+
+1. <https://neon.tech> → **Sign up** with GitHub → **New Project**
+   (region: US East or US West).
+2. Copy the **connection string** from the dashboard — looks like
+   `postgresql://user:pass@ep-xxxx-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require`
+   (use the **pooled** one if offered).
+
+**2 — Render blueprint**
+
+3. <https://dashboard.render.com> → sign in with GitHub (no card for free tier).
+4. **Blueprints** → **New Blueprint Instance** → connect
+   `dev-ayeshazee/sakai-blog`.
+5. Render reads `render.yaml` and prompts for two values:
+   - `DATABASE_URL` → paste the Neon string
+   - `CORS_ORIGIN` → leave blank (set in step 7)
+6. **Apply.** First build ≈ 6–10 min. You get:
    - API  → `https://blog-api-XXXX.onrender.com/api`
    - Site → `https://blog-frontend-XXXX.onrender.com`
-7. **Lock down CORS:** Dashboard → `blog-api` → **Environment** → set
-   `CORS_ORIGIN` = your `https://blog-frontend-XXXX.onrender.com` → **Save**
-   (auto-redeploys, ~1 min).
-8. Open the site URL. Log in with `demo@blog.test` / `password123`.
+
+**3 — CORS**
+
+7. Copy the `blog-frontend` URL → Render → `blog-api` → **Environment** →
+   set `CORS_ORIGIN` to it → **Save Changes** (redeploys ~1 min).
+8. Open the site, log in with `demo@blog.test` / `password123`.
 
 ### How the wiring works
 
-- `blog-api` reads `DATABASE_URL` from the managed DB, runs migrations on boot
-  (`RUN_MIGRATIONS=true`) and seeds demo data **once** (`RUN_SEED=true`, skipped
-  if the DB already has users). `JWT_SECRET` is auto-generated.
+- On boot `blog-api` runs migrations (`RUN_MIGRATIONS=true`) and seeds demo
+  data once (`RUN_SEED=true`, skipped once the DB has users). `JWT_SECRET` is
+  auto-generated.
 - `blog-frontend`'s build runs `node scripts/set-env.js`, which reads the
   `API_HOST` service binding and writes `environment.prod.ts` with
   `apiUrl = https://<api-host>/api` before `ng build`.
-- `CORS_ORIGIN` is the one value you set by hand (step 7) — kept out of the
-  blueprint so the two services don't form a circular dependency. `main.ts`
-  also prepends `https://` to a bare host if you paste one.
+- `CORS_ORIGIN` is set by hand (step 7) so the two services don't form a
+  circular dependency at blueprint-apply time. `main.ts` prepends `https://`
+  to a bare host.
 
-### Free-tier caveats
+### Keeping the API warm (optional)
 
-- The web service **sleeps after 15 min idle**; the next request cold-starts in
-  ~50 s. Fine for a demo — mention it to reviewers.
-- Render's **free Postgres is deleted ~30 days** after creation. For something
-  longer-lived, use a free Neon database instead (next section).
+The free API sleeps after 15 min idle. For a portfolio link, add a free
+uptime ping so the first visit is instant:
 
-### Keep it alive: free Neon Postgres instead of Render's
+- <https://cron-job.org> (free) → new cron job → `GET
+  https://blog-api-XXXX.onrender.com/api/health` every 10 minutes.
 
-Neon's free tier does not expire. Swap the database only:
-
-1. <https://neon.tech> → sign up (GitHub) → **New Project** (pick a region near
-   your Render region, e.g. US West).
-2. Copy the **connection string** (`postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require`).
-3. In `render.yaml`, delete the whole `databases:` block **and** the
-   `DATABASE_URL` `fromDatabase` entry under `blog-api`. Commit + push.
-4. Render dashboard → `blog-api` → **Environment**:
-   - `DATABASE_URL` = the Neon string
-   - `DATABASE_SSL` = `true`
-   - Save → redeploy. Migrations + seed run against Neon on boot.
-
-(Same recipe works with a free **Supabase** database — use its
-*Session pooler* connection string.)
+Or just note on your portfolio that the first load may take ~40 s.
 
 ---
 

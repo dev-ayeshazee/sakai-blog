@@ -24,22 +24,21 @@ with a **NestJS** API.
 
 ## Live demo
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/dev-ayeshazee/sakai-blog)
-
-Free deploy in ~8 minutes — **[full step-by-step in docs/DEPLOY.md](docs/DEPLOY.md)**.
+Free, permanent hosting — **[full step-by-step in docs/DEPLOY.md](docs/DEPLOY.md)**.
 Short version:
 
-1. Sign in to <https://dashboard.render.com> with GitHub (no card for the free tier).
-2. **Blueprints → New Blueprint Instance →** connect this repo **→ Apply**
-   (leave the `CORS_ORIGIN` prompt blank).
-3. After ~5–8 min you get `https://blog-frontend-XXXX.onrender.com` (site) and
+1. **Database:** create a free Postgres at <https://neon.tech>, copy its
+   connection string.
+2. **Render:** <https://dashboard.render.com> → **Blueprints → New Blueprint
+   Instance** → connect this repo. When prompted, paste the Neon string as
+   `DATABASE_URL`; leave `CORS_ORIGIN` blank.
+3. After ~6–10 min you get `https://blog-frontend-XXXX.onrender.com` (site) and
    `https://blog-api-XXXX.onrender.com/api` (API).
-4. Dashboard → `blog-api` → **Environment** → set `CORS_ORIGIN` to the site URL → **Save**.
+4. Render → `blog-api` → **Environment** → set `CORS_ORIGIN` to the site URL → **Save**.
 5. Open the site, log in with the demo account below.
 
-_Free tier: services sleep after 15 min idle (~50 s cold start); Render's free
-Postgres is deleted after ~30 days — swap in a free Neon DB to keep it
-(see DEPLOY.md)._
+_The Angular static site is always on; the free API sleeps after 15 min idle
+and wakes in ~40 s (a free cron ping keeps it warm — see DEPLOY.md)._
 
 ---
 

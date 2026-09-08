@@ -1,21 +1,16 @@
-# Render Blueprint — deploy the whole stack (Postgres + NestJS API + Angular
-# static site) on Render's free tier. Full walkthrough: docs/DEPLOY.md
+# Render Blueprint — NestJS API (Docker) + Angular static site on Render's
+# free tier. Uses an external free Postgres (Neon) so nothing expires.
+# Full walkthrough: docs/DEPLOY.md
 #
-#   1. https://dashboard.render.com/blueprints -> "New Blueprint Instance"
-#   2. Connect this repo -> Apply (leave the CORS_ORIGIN prompt blank).
-#   3. When both URLs exist: Dashboard -> blog-api -> Environment ->
-#      set CORS_ORIGIN to the blog-frontend URL -> Save.
+#   1. Create a free Postgres at https://neon.tech, copy its connection string.
+#   2. https://dashboard.render.com/blueprints -> "New Blueprint Instance"
+#      -> connect this repo -> Apply.
+#   3. When prompted, paste the Neon string as DATABASE_URL; leave CORS_ORIGIN
+#      blank for now.
+#   4. Once blog-frontend has a URL: Dashboard -> blog-api -> Environment ->
+#      set CORS_ORIGIN to that URL -> Save.
 #
-# Free tier notes: the web service sleeps after 15 min idle (~50s cold start);
-# Render's free Postgres is removed ~30 days after creation (swap DATABASE_URL
-# for a free Neon/Supabase string to keep it alive — see docs/DEPLOY.md).
-
-databases:
-  - name: blog-db
-    plan: free
-    databaseName: blog
-    user: blog
-    region: oregon
+# Free-tier note: the API sleeps after 15 min idle and wakes in ~40s.
 
 services:
   # ---- NestJS API (Docker) --------------------------------------------------
@@ -33,10 +28,9 @@ services:
         value: production
       - key: PORT
         value: "3001"
+      # Paste your Neon connection string when the blueprint prompts.
       - key: DATABASE_URL
-        fromDatabase:
-          name: blog-db
-          property: connectionString
+        sync: false
       - key: DATABASE_SSL
         value: "true"
       - key: JWT_SECRET
